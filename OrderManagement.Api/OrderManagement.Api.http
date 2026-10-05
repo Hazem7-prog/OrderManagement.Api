@@ -1,0 +1,25 @@
+@OrderManagement.Api_HostAddress = http://localhost:5148
+
+### Create an order
+POST {{OrderManagement.Api_HostAddress}}/api/orders
+Content-Type: application/json
+
+{
+  "customerName": "Ahmed",
+  "items": [
+    { "productName": "Keyboard", "quantity": 1, "unitPrice": 450 },
+    { "productName": "Mouse", "quantity": 2, "unitPrice": 150 }
+  ]
+}
+
+### Get order by id
+GET {{OrderManagement.Api_HostAddress}}/api/orders/REPLACE_WITH_ID
+Accept: application/json
+
+### List orders
+GET {{OrderManagement.Api_HostAddress}}/api/orders?page=1&pageSize=20
+Accept: application/json
+
+### Dashboard
+GET {{OrderManagement.Api_HostAddress}}/api/dashboard/orders
+Accept: application/json

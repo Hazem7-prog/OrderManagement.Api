@@ -1,0 +1,40 @@
+# Monitoring stack for OrderFlow. This does NOT contain the API itself -
+# the API keeps running on the host via `dotnet run`, exactly like
+# before. These containers only watch it from outside.
+#
+# Start:  docker compose -f docker-compose.observability.yml up -d
+# Stop:   docker compose -f docker-compose.observability.yml down
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: orderflow-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: orderflow-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: orderflow-jaeger
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16686:16686"   # Jaeger UI
+      - "4317:4317"     # OTLP gRPC - the API sends traces here

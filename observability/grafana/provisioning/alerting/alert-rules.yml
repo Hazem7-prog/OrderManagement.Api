@@ -1,0 +1,70 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: OrderFlow alerts
+    folder: OrderFlow
+    interval: 1m
+    rules:
+
+      # Meaning: pending orders are piling up, which usually means the
+      # background worker has stopped processing them normally.
+      - uid: orderflow-high-pending-orders
+        title: High Pending Orders
+        condition: C
+        for: 5m
+        noDataState: NoData
+        execErrState: Error
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              expr: orders_pending
+              instant: true
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expr: ""
+              conditions:
+                - evaluator: { type: gt, params: [20] }
+                  operator: { type: and }
+                  query: { params: [A] }
+        annotations:
+          summary: "Pending orders have stayed above 20 for 5 minutes - the background worker may not be processing them normally."
+        labels:
+          severity: warning
+
+      # Meaning: the Redis health check is failing, so cached reads are
+      # falling back to SQL Server and the app is running degraded.
+      - uid: orderflow-redis-unavailable
+        title: Redis Unavailable
+        condition: C
+        for: 1m
+        noDataState: NoData
+        execErrState: Error
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              expr: dependency_up{name="redis"}
+              instant: true
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expr: ""
+              conditions:
+                - evaluator: { type: lt, params: [1] }
+                  operator: { type: and }
+                  query: { params: [A] }
+        annotations:
+          summary: "The Redis health check has failed - the cache dependency is unavailable."
+        labels:
+          severity: critical

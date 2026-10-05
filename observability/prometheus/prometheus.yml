@@ -1,0 +1,10 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: "orderflow-api"
+    metrics_path: /metrics
+    static_configs:
+      # host.docker.internal lets a container reach the API running on
+      # your machine via `dotnet run` (port from launchSettings.json).
+      - targets: ["host.docker.internal:5148"]
